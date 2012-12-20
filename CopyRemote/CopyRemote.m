@@ -9,12 +9,12 @@ If[ ("AllowInternetUse" /. SystemInformation["Network"]) === False,
 ];
 
 
-BeginPackage["CopyRemote`",{"JLink`"}]
+BeginPackage["CopyRemote`",{"JLink`"}];
   
-CopyRemote::usage = "CopyRemote[url, localfilename] copies a file from an http location to localfilename."
+CopyRemote::usage = "CopyRemote[url, localfilename] copies a file from an http location to localfilename.";
 
 ProxyHost::usage="ProxyHost is an option for CopyRemote.";
-ProxyPort::usage="ProxyPort is an option for CopyRemote."
+ProxyPort::usage="ProxyPort is an option for CopyRemote.";
 
 URLQ::usage = "URLQ[url] give True if url is reachable and False otherwise.";
 
@@ -51,7 +51,10 @@ CopyRemote[url_String?URLQ, localfile_:Automatic, opts:OptionsPattern[]] /; (Len
             ];
             buf = Symbol["JLink`JavaNew"]["[B", 8192];
             If[ StringQ[localfile],
-                outFile = OpenWrite[localfile, DOSTextFormat -> False],
+            	If[DirectoryName[localfile] === "", 
+                	outFile = OpenWrite[FileNameJoin[{$TemporaryDirectory, localfile}], DOSTextFormat -> False],
+                	outFile = OpenWrite[localfile, DOSTextFormat -> False]
+            	],
                 outFile = OpenTemporary[DOSTextFormat->False];
             ];
             While[(numRead = stream@read[buf]) > 0,
