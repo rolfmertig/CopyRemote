@@ -26,51 +26,48 @@
 
 	CopyRemote copies a file from a url to a local directory.
 	The code is based on the GetRemote example from the JLink documentation 
-	Furthermore OpenRemote, URLQ and URLFileByteSize are implemented.
+	Furthermore OpenRemote, URLQ and URLFileByteCount are implemented.
 	
 *)
 	
 (* "Example usage:
 
-CopyRemote["http://functions.wolfram.com/NB/Hypergeometric2F1.nb"]
+	CopyRemote["http://functions.wolfram.com/NB/Hypergeometric2F1.nb"]
 
 copies the notebook to $TemporaryDirectory
 
+
 To also open the notebook, do:
-OpenRemote["http://functions.wolfram.com/NB/Hypergeometric2F1.nb"]
+	OpenRemote["http://functions.wolfram.com/NB/Hypergeometric2F1.nb"]
 
 This copies a palette to the right place:
 
-Notice: 
-Since with default Options[CopyRemote]  "%20" will be replaced by " ", so this:
-NotebookOpen @ 
-CopyRemote["https://dl.dropbox.com/u/38623/SE%20Uploader.nb",
-	       FileNameJoin[{$UserAddOnsDirectory,"SystemFiles","FrontEnd","Palettes"}]]
+    NotebookOpen @ CopyRemote["https://dl.dropbox.com/u/38623/SE%20Uploader.nb",
+    FileNameJoin[{$UserAddOnsDirectory,"SystemFiles","FrontEnd","Palettes"}]]
+     
+Notice: Since with default Options[CopyRemote]  "%20" will be replaced by " ", so this:
 will put "SE Uploader.nb" into the Palettes directory 
  
  
- An alternative is to use
- Import["http://www.mertig.com/mathdepot/Installer.m"];
- InstallPalette["https://dl.dropbox.com/u/38623/SE%20Uploader.nb"]
+An alternative is to use
+
+	Import["http://www.mertig.com/mathdepot/Installer.m"];
+	InstallPalette["https://dl.dropbox.com/u/38623/SE%20Uploader.nb"]
 
 *)
       
 
 (* :Keywords: projects, install *)
-(* check for a setting in the Mathematica preferences *)
-If[ ("AllowInternetUse" /. SystemInformation["Network"]) === False,
-    Print["You have configured Mathematica to not access the internet. Too bad. 
-	Please check the \"Allow Mathematica to use the Internet\" box in the
-    Help \[FilledRightTriangle] Internet Connectivity dialog. " ];
-];
 
 
 BeginPackage["CopyRemote`",{"JLink`"}];
 
-
-list = { CopyRemote, OpenRemote, URLFileByteSize(*, URLQ *)};
+(* enable updating without reloading. URLQ is memoizing, so leave it unprotected *)
+list = { CopyRemote, OpenRemote, URLFileByteCount(*, URLQ *)};
 Unprotect @@ list;
 ClearAll @@ list;
+ClearAll[URLQ];
+
   
 CopyRemote::usage = "CopyRemote[urlfile] copies a urlfile as FileNameTake[urlfile] to $TemporaryDirectory.
  CopyRemote[url, localdir] copies a file from an http location to localdir.";
@@ -80,22 +77,20 @@ OpenRemote::usage= "OpenRemote[urfile] is a utility function for basically Syste
 ProxyHost::usage="ProxyHost is an option for CopyRemote.";
 ProxyPort::usage="ProxyPort is an option for CopyRemote.";
 
-URLFileByteSize::usage = "URLFileByteSize[file] gives the remote file size in Byte."
+URLFileByteCount::usage = "URLFileByteCount[file] gives the remote file size in Byte."
+
 URLQ::usage = "URLQ[url] give True if url is reachable and False otherwise.";
 
-badurl::dead = "The URL `1` does not exist or is not reachable.";
+CopyRemote::failed= "The transfer of `1` did not succeed. Please try again.";
 
 Begin["`Private`"];
-
-
 
 (* the option StringReplace is to unescape URL-file artifacts like %20 *)
 Options[CopyRemote] = {ProxyHost :> None, ProxyPort :> None, ProgressIndicator -> True, StringReplace -> {"%20"->" "}};
 Options[OpenRemote] = Options[CopyRemote];
 
 (* CopyRemote might return $Failed, therefore, only open the result if it was successful : *)
-OpenRemote[args__] :=
-        Replace[CopyRemote[args], (s_String?FileExistsQ) :> SystemOpen[s]];
+OpenRemote[args__] := Module[{cr}, Replace[cr = CopyRemote[args], (s_String?FileExistsQ) :> SystemOpen[s]]; cr];
 
 filename = Function[{f,s}, StringReplace[ FileNameTake[f], s]];
 
@@ -105,7 +100,7 @@ CopyRemote[url_?URLQ, opts:OptionsPattern[]] :=
 
 (* create directory if it does not exist *)
 CopyRemote[url_?URLQ, dir_String /; ( (*!StringMatchQ[FileNameTake@dir, "*.*"] && *)FileType[dir] === None), more___
-          ]  /; (FileNameTake[url]=!=FileNameTake[dir])  :=
+          ]  /; (FileNameTake[url]=!=FileNameTake[dir])  := Catch @ 
  Module[{cdir}, 
  	cdir = CreateDirectory[dir]; 
  	If[cdir  === $Failed, Throw[$Failed]]; 
@@ -132,23 +127,30 @@ closenb = Function[locnb, If[ $Notebooks && StringMatchQ[locnb, "*.nb", IgnoreCa
             Select[Notebooks[], 
             ToFileName[ "FileName" /. NotebookInformation[#]] === locnb &] /. {n_NotebookObject} :> NotebookClose[n]
         ]];
-
+        
 CopyRemote[url_?URLQ, 
 	       localdir_String?DirectoryQ, 
 	       locfile_String, 
 	       opts:OptionsPattern[]
-	       ] := Block[{openStream, read, close, locfilefull}, 
-    Needs["JLink`"]; Symbol["JLink`InstallJava"][]; (* using Symbol here enables an .mx saveable package, or to put this into a ButtonFunction, etc.  *)
-    (* locfile can be a notebook. If it is open, close it *)
+	       ] := Catch @ Block[{openStream, read, close, locfilefull, locfiletmp, outFile, rfilesize}, 
+    Needs["JLink`"]; 
+    Symbol["JLink`InstallJava"][]; (* using Symbol here enables an .mx saveable package, or to put this into a ButtonFunction, etc.  *)
     locfilefull = If[DirectoryName[locfile]==="", FileNameJoin[{localdir, locfile}], locfile];
-    closenb @ locfilefull;
+    (* download to a temporary file , in case the download fails.
+       copy locfiletmp to locfilefull only if download succeeded *)
     (* This code is based on the GetRemote example in the JLink documentation *)
-   	  Function[j, 
-        If[OptionValue[ProgressIndicator], 
-   	  	Monitor[j, progress[url, locfilefull]],
-   	    j], HoldFirst][
+    rfilesize = URLFileByteCount[url];
+    If[!IntegerQ[rfilesize], Message[CopyRemote::failed, url]; Throw[$Failed]];
+    (* temporary file *)
+    outFile = OpenWrite[DOSTextFormat -> False];
+    locfiletmp = 
+   	  Function[j, If[OptionValue[ProgressIndicator], 
+             	  	 Monitor[j, progress[url, outFile[[1]], rfilesize]],
+   	                 j], 
+   	           HoldFirst
+   	          ][
     Symbol["JLink`JavaBlock"][
-        Module[ {u, stream, numRead, outFile, buf, prxyHost, prxyPort},
+        Module[ {u, stream, numRead, buf, prxyHost, prxyPort},
             {prxyHost, prxyPort} = OptionValue/@{ProxyHost, ProxyPort};
             If[ StringQ[prxyHost],
                 (* Set properties to force use of proxy. *)
@@ -160,7 +162,6 @@ CopyRemote[url_?URLQ,
                 Return[$Failed]
             ];
             buf = Symbol["JLink`JavaNew"]["[B", 8192]; (* ] *)
-            outFile = OpenWrite[locfilefull, DOSTextFormat -> False];
             While[(numRead = stream@read[buf]) > 0,
              WriteString[outFile, FromCharacterCode[If[ # < 0,
                                                         #+256,
@@ -171,14 +172,25 @@ CopyRemote[url_?URLQ,
             Close[outFile] (* Close returns the filename *)
         ]
     ]
-             ]
+             ];
+    (*check if the transfer was successfull: *)
+    (* TODO: add MD5sum check here somehow *)
+    If[FileByteCount[locfiletmp] =!= rfilesize, 
+    	Message[CopyRemote::failed, url];
+    	Throw[$Failed]
+    ];
+    (* locfilefull can be a notebook. If it is open, close it *)
+    closenb @ locfilefull;
+    If[FileExistsQ[locfilefull], DeleteFile[locfilefull]];
+    RenameFile[locfiletmp, locfilefull]
 ];
 
 
 (* does the URL exists or not *)
-URLQ[link_String] := URLQ[link] = 
-    Block[ {openConnection, getContentLength, getInputstream, check, 
+URLQ[link_String] := URLQ[link] =  (* memoize links, to save time *)
+ Catch @ Block[ {openConnection, getContentLength, getInputstream, check, 
       close, getInputStream},
+      checknetwork[]; (* maybe not necessary, but well ... *)
         Needs["JLink`"];
         Symbol["JLink`InstallJava"][];
         Symbol["JLink`JavaBlock"][
@@ -197,7 +209,7 @@ URLQ[h_/;Head[h] =!= String] = False;
 
 
 (* find out how big the remote file is *)
-URLFileByteSize[link_?URLQ] :=
+URLFileByteCount[link_?URLQ] :=
     Block[ {openConnection, getContentLength, getInputstream, check, 
       close, getInputStream},
         Needs["JLink`"];
@@ -222,33 +234,42 @@ $progressupdateinterval = .6;
 myroundMB[rfs_?NumberQ]:= Round[100 rfs /1024.^2]/ 100.;
 myroundMB[_]:=" ";
 
-progress[remotefile_?URLQ, localfile_String] :=
-    Module[ {rfilesize = URLFileByteSize[remotefile]},
+Clear[progress];
+progress[remotefile_?URLQ, localfile_String, rfilesize_Integer] :=
         If[ $Notebooks,
-            Row[{"Transferring ", myroundMB[rfilesize]," MB from ",
-            If[ StringQ[Setting@#],
-                #,
-                " "
-            ] &@remotefile, " ", 
+            Row[{"Copied ", 
             ProgressIndicator[
              Quiet[If[ ! NumberQ[#],
                        0,
                        #
                    ] &@(Refresh[FileByteCount[localfile], 
                     TrackedSymbols -> {},
-                 UpdateInterval -> $progressupdateinterval]/rfilesize)]],
-            " ", If[ ! NumberQ[Setting@#],
-                     0,
-                     #
-                 ] &@
-             Refresh[FileByteCount[localfile]/1024.^2, 
-                    TrackedSymbols -> {},
-             	  UpdateInterval -> $progressupdateinterval], 
-            " MByte"
+                 UpdateInterval -> $progressupdateinterval]/rfilesize)],
+                 Background-> Orange, ImageSize->{42, 15}
+             ],
+            " ", If[ ! NumberQ[Setting@#], 0, # ] &@
+             Refresh[Round[100 FileByteCount[localfile]/rfilesize], 
+                     TrackedSymbols -> {},
+                 	 UpdateInterval -> $progressupdateinterval
+             ], 
+            " % of ", 
+            myroundMB[rfilesize],
+            " MB ", 
+            "from ",
+            remotefile,
+            " to ", localfile
             }], 
-            Print["Downloading ", remotefile,"   please wait "]
-        ]
-    ];
+            Print["Transferring ", remotefile,"   please wait "]
+        ];
+    
+(* check for a setting in the Mathematica preferences *)
+checknetwork[]:=
+If[ ("AllowInternetUse" /. SystemInformation["Network"]) === False,
+    Print["You have configured Mathematica to not access the internet. Too bad. 
+	Please check the \"Allow Mathematica to use the Internet\" box in the
+    Help \[FilledRightTriangle] Internet Connectivity dialog. " ];
+    Throw[$Failed]
+];
     
 With[{list = list},   
      SetAttributes[list, ReadProtected];   
@@ -269,7 +290,7 @@ URLQ["http://www.mertig.cddm"]
 False
 ]
 
-Test[URLFileByteSize[
+Test[URLFileByteCount[
   "http://www.nist.gov/images/banner_graphics/homepage_banner.jpg"],
   44850]
 
