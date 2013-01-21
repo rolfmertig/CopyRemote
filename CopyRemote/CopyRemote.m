@@ -69,8 +69,8 @@ ClearAll @@ list;
 ClearAll[URLQ];
 
   
-CopyRemote::usage = "CopyRemote[urlfile] copies a urlfile as FileNameTake[urlfile] to $TemporaryDirectory.
- CopyRemote[url, localdir] copies a file from an http location to localdir.";
+CopyRemote::usage = "CopyRemote[urlfile] copies a urlfile as URLFileNameTake[urlfile] to $TemporaryDirectory.
+ CopyRemote[url, localfile] copies a file from an http location to localfile.";
  
 OpenRemote::usage= "OpenRemote[urfile] is a utility function for basically SystemOpen[CopyRemote[urlfile]]."
 
@@ -79,6 +79,8 @@ ProxyPort::usage="ProxyPort is an option for CopyRemote.";
 
 URLFileByteCount::usage = "URLFileByteCount[file] gives the remote file size in Byte."
 
+URLFileNameTake::usage = "URLFileNameTake[file] is like FileNameTake but skpips everything after a ?";
+
 URLQ::usage = "URLQ[url] give True if url is reachable and False otherwise.";
 
 CopyRemote::failed= "The transfer of `1` did not succeed. Please try again.";
@@ -86,35 +88,40 @@ CopyRemote::failed= "The transfer of `1` did not succeed. Please try again.";
 Begin["`Private`"];
 
 (* the option StringReplace is to unescape URL-file artifacts like %20 *)
-Options[CopyRemote] = {ProxyHost :> None, ProxyPort :> None, ProgressIndicator -> True, StringReplace -> {"%20"->" "}};
+(* if Print is set to True then a Monitor shows up displaying the percentage of tranfer *)
+Options[CopyRemote] = {ProxyHost :> None, ProxyPort :> None, Print -> True, StringReplace -> {"%20"->" "}};
 Options[OpenRemote] = Options[CopyRemote];
 
 (* CopyRemote might return $Failed, therefore, only open the result if it was successful : *)
 OpenRemote[args__] := Module[{cr}, Replace[cr = CopyRemote[args], (s_String?FileExistsQ) :> SystemOpen[s]]; cr];
 
-filename = Function[{f,s}, StringReplace[ FileNameTake[f], s]];
+
+URLFileNameTake[s_String]:= StringSplit[FileNameTake[s],"&"]//First;
+filename = Function[{f,s}, StringReplace[ URLFileNameTake[f], s]];
 
 (* use $TemporaryDirectory if no second argument is given *)
 CopyRemote[url_?URLQ, opts:OptionsPattern[]] :=
 	CopyRemote[url, $TemporaryDirectory, FileNameJoin[{$TemporaryDirectory, filename[url, OptionValue[StringReplace]]}], opts];
 
 (* create directory if it does not exist *)
-CopyRemote[url_?URLQ, dir_String /; ( (*!StringMatchQ[FileNameTake@dir, "*.*"] && *)FileType[dir] === None), more___
-          ]  /; (FileNameTake[url]=!=FileNameTake[dir])  := Catch @ 
- Module[{cdir}, 
- 	cdir = CreateDirectory[dir]; 
+CopyRemote[url_?URLQ, file_String /;(
+      	   (DirectoryName[file]=!="") && (FileType[DirectoryName[file]] =!= Directory)
+	       ), opts___?OptionQ_
+          ]  := Module[{cdir}, 
+     Catch[
+ 	cdir = CreateDirectory[DirectoryName @ file]; 
  	If[cdir  === $Failed, Throw[$Failed]]; 
- 	CopyRemote[url, dir, more] 
- 	];
+ 	CopyRemote[url, cdir, FileNameTake[file], opts] 
+ 	]];
  	
-(* since it will not work, redefine natural calls like
+(* since it will put files in Directory[] otherwise, redefine natural calls like
    CopyRemote["http://www.mertig.com/mathdepot/CopyRemote.m", "CopyRemote.m"] to mean
-   CopyRemote["http://www.mertig.com/mathdepot/CopyRemote.m", $TemporaryDirectory]
+   CopyRemote["http://www.mertig.com/mathdepot/CopyRemote.m", FileNameJoin[{$TemporaryDirectory, "CopyRemote.m"}]]
 *)
    
-CopyRemote[url_?URLQ, dir_String /; (FileType[dir] === None), more___
-          ]  /; (FileNameTake[url] === FileNameTake[dir])  :=
- CopyRemote[url, DirectoryName[dir] /. "" :> $TemporaryDirectory];
+CopyRemote[url_?URLQ, file_String /; (FileType[file] === None), more___
+          ]  /; (file === FileNameTake[file])  :=
+ CopyRemote[url, $TemporaryDirectory, file];
 
 (* if the directory exists, use it and get the filename from the url filename *)
 CopyRemote[url_?URLQ, 
@@ -144,7 +151,7 @@ CopyRemote[url_?URLQ,
     (* temporary file *)
     outFile = OpenWrite[DOSTextFormat -> False];
     locfiletmp = 
-   	  Function[j, If[OptionValue[ProgressIndicator], 
+   	  Function[j, If[OptionValue[Print], 
              	  	 Monitor[j, progress[url, outFile[[1]], rfilesize]],
    	                 j], 
    	           HoldFirst
@@ -190,12 +197,17 @@ CopyRemote[url_?URLQ,
 URLQ[link_String] := URLQ[link] =  (* memoize links, to save time *)
  Catch @ Block[ {openConnection, getContentLength, getInputstream, check, 
       close, getInputStream},
+      If[ (!StringMatchQ[StringTrim@link, "http://*"] ) && 
+      	  (!StringMatchQ[StringTrim@link, "https://*"] ),
+      	  Throw[False]
+      ];
+
       checknetwork[]; (* maybe not necessary, but well ... *)
         Needs["JLink`"];
         Symbol["JLink`InstallJava"][];
         Symbol["JLink`JavaBlock"][
          Module[ {url, urlcon},
-             url = Symbol["JavaNew"]["java.net.URL", link];
+             url = Symbol["JavaNew"]["java.net.URL", StringTrim@link];
              urlcon = url@openConnection[];
              Quiet[check = urlcon@getInputStream[]];
              If[ check === $Failed,
