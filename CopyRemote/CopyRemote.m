@@ -13,6 +13,8 @@
 
 (* :Mathematica Versions: 7 - 9 *)
 
+(* :License: LGPL *)
+
 (* :Copyright: Rolf Mertig, 2002 - 2013.  *)
 
 (* :Installation:
@@ -122,6 +124,13 @@ CopyRemote[url_?URLQ, file_String /;(
 CopyRemote[url_?URLQ, file_String /; (FileType[file] === None), more___
           ]  /; (file === FileNameTake[file])  :=
  CopyRemote[url, $TemporaryDirectory, file];
+ 
+ (* go from 2 argumetn to three argument form: *)
+CopyRemote[url_?URLQ, file_String /;(
+      	   (DirectoryName[file]=!="") && (FileType[DirectoryName[file]] === Directory)
+	       ), opts___?OptionQ_
+          ]  := 
+ 	CopyRemote[url, DirectoryName[file], file, opts];
 
 (* if the directory exists, use it and get the filename from the url filename *)
 CopyRemote[url_?URLQ, 
@@ -182,10 +191,13 @@ CopyRemote[url_?URLQ,
              ];
     (*check if the transfer was successfull: *)
     (* TODO: add MD5sum check here somehow *)
+(* sometimes rfilesize is -1 ... : *)
+If[rfilesize > 0,
     If[FileByteCount[locfiletmp] =!= rfilesize, 
     	Message[CopyRemote::failed, url];
     	Throw[$Failed]
-    ];
+    ]
+];
     (* locfilefull can be a notebook. If it is open, close it *)
     closenb @ locfilefull;
     If[FileExistsQ[locfilefull], DeleteFile[locfilefull]];

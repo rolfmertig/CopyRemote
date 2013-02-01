@@ -1,0 +1,292 @@
+(* Content-type: application/vnd.wolfram.mathematica *)
+
+(*** Wolfram Notebook File ***)
+(* http://www.wolfram.com/nb *)
+
+(* CreatedBy='Mathematica 9.0' *)
+
+(*CacheID: 234*)
+(* Internal cache information:
+NotebookFileLineBreakTest
+NotebookFileLineBreakTest
+NotebookDataPosition[       157,          7]
+NotebookDataLength[      7168,        283]
+NotebookOptionsPosition[      4965,        200]
+NotebookOutlinePosition[      5685,        228]
+CellTagsIndexPosition[      5561,        222]
+WindowFrame->Normal*)
+
+(* Beginning of Notebook Content *)
+Notebook[{
+Cell[BoxData[
+ RowBox[{"Block", "[", 
+  RowBox[{
+   RowBox[{"{", 
+    RowBox[{"$Path", "=", 
+     RowBox[{"AppendTo", "[", 
+      RowBox[{"$Path", ",", 
+       RowBox[{"NotebookDirectory", "[", "]"}]}], "]"}]}], "}"}], ",", 
+   "\[IndentingNewLine]", "\[IndentingNewLine]", 
+   RowBox[{"Get", "[", "\"\<CopyRemote`\>\"", "]"}]}], "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  RowBox[{"$Path", "=", 
+   RowBox[{"DeleteDuplicates", "[", "$Path", "]"}]}], ";"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Unprotect", "[", "CopyRemote", "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"{", "\<\"CopyRemote\"\>", "}"}]], "Output"]
+}, Open  ]],
+
+Cell[BoxData[
+ RowBox[{"ClearAll", "@", "CopyRemote"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"ClearAttributes", "[", 
+  RowBox[{"CopyRemote", ",", "ReadProtected"}], "]"}]], "Input"],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"??", "CopyRemote"}]], "Input"],
+
+Cell["CopyRemote`CopyRemote", "Print", "PrintUsage",
+ CellTags->"Info3568626487-1521201"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[{
+ RowBox[{"FindFile", "[", "\"\<CopyRemote`\>\"", "]"}], "\[IndentingNewLine]", 
+ RowBox[{"Get", "@", "%"}]}], "Input"],
+
+Cell[BoxData["\<\"G:\\\\workspace5\\\\CopyRemote\\\\CopyRemote\\\\Kernel\\\\\
+init.m\"\>"], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"\"\<http://www.wolfram.com/index.html\>\"", "//", "URLQ"}]], "Input"],
+
+Cell[BoxData["True"], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Test", "[", 
+  RowBox[{
+   RowBox[{"URLQ", "[", "\"\<http://mathematica.stackexchange.com\>\"", "]"}],
+    ",", "True"}], "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"Test", "[", 
+  RowBox[{"True", ",", "True"}], "]"}]], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Test", "[", 
+  RowBox[{
+   RowBox[{"URLQ", "[", "\"\<http://www.mertig.cddm\>\"", "]"}], ",", 
+   "False"}], "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"Test", "[", 
+  RowBox[{"False", ",", "False"}], "]"}]], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Options", "@", "CopyRemote"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"ProxyHost", "\[RuleDelayed]", "None"}], ",", 
+   RowBox[{"ProxyPort", "\[RuleDelayed]", "None"}], ",", 
+   RowBox[{"Print", "\[Rule]", "True"}], ",", 
+   RowBox[{"StringReplace", "\[Rule]", 
+    RowBox[{"{", 
+     RowBox[{"\<\"%20\"\>", "\[Rule]", "\<\" \"\>"}], "}"}]}]}], 
+  "}"}]], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"URLQ", "@", "1"}]], "Input"],
+
+Cell[BoxData["False"], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Test", "[", 
+  RowBox[{
+   RowBox[{
+   "URLFileByteCount", "[", 
+    "\"\<http://www.gnustep.org/gnustep-header14.jpg\>\"", "]"}], "\[Equal]", 
+   "12825"}], "]"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"Test", "[", "True", "]"}]], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"Options", "@", "CopyRemote"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{"{", 
+  RowBox[{
+   RowBox[{"ProxyHost", "\[RuleDelayed]", "None"}], ",", 
+   RowBox[{"ProxyPort", "\[RuleDelayed]", "None"}], ",", 
+   RowBox[{"Print", "\[Rule]", "True"}], ",", 
+   RowBox[{"StringReplace", "\[Rule]", 
+    RowBox[{"{", 
+     RowBox[{"\<\"%20\"\>", "\[Rule]", "\<\" \"\>"}], "}"}]}]}], 
+  "}"}]], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"CopyRemote", "[", "\"\<http://functions.wolfram.com/NB/Log.nb\>\"", 
+  "]"}]], "Input"],
+
+Cell[BoxData["\<\"C:\\\\Users\\\\Rolf \
+Mertig\\\\AppData\\\\Local\\\\Temp\\\\Log.nb\"\>"], "Output"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"?", "OpenTemporary"}]], "Input"],
+
+Cell[BoxData[
+ RowBox[{
+  StyleBox["\<\"\!\(\*RowBox[{\\\"OpenTemporary\\\", \\\"[\\\", \\\"]\\\"}]\) \
+opens a temporary file to which output can be written, and returns an \
+OutputStream object. \"\>", "MSG"], "\[NonBreakingSpace]", 
+  ButtonBox[
+   StyleBox["\[RightSkeleton]", "SR"],
+   Active->True,
+   BaseStyle->"Link",
+   ButtonData->"paclet:ref/OpenTemporary"]}]], "Print", "PrintUsage",
+ CellTags->"Info3568626502-1521201"]
+}, Open  ]],
+
+Cell[CellGroupData[{
+
+Cell[BoxData[
+ RowBox[{"OpenRemote", "[", 
+  "\"\<http://functions.wolfram.com/NB/Hypergeometric2F1.nb\>\"", 
+  "]"}]], "Input"],
+
+Cell[BoxData["\<\"C:\\\\Users\\\\Rolf \
+Mertig\\\\AppData\\\\Local\\\\Temp\\\\Hypergeometric2F1.nb\"\>"], "Output"]
+}, Open  ]]
+},
+Editable->True,
+WindowSize->{1126, 997},
+WindowMargins->{{-1346, Automatic}, {Automatic, 1}},
+ShowSelection->True,
+Magnification->1.3000000715255737`,
+FrontEndVersion->"9.0 for Microsoft Windows (64-bit) (November 20, 2012)",
+StyleDefinitions->"Default.nb"
+]
+(* End of Notebook Content *)
+
+(* Internal cache information *)
+(*CellTagsOutline
+CellTagsIndex->{
+ "Info3568626487-1521201"->{
+  Cell[1468, 57, 89, 1, 53, "Print",
+   CellTags->"Info3568626487-1521201"]},
+ "Info3568626502-1521201"->{
+  Cell[4233, 176, 433, 10, 55, "Print",
+   CellTags->"Info3568626502-1521201"]}
+ }
+*)
+(*CellTagsIndex
+CellTagsIndex->{
+ {"Info3568626487-1521201", 5350, 213},
+ {"Info3568626502-1521201", 5457, 216}
+ }
+*)
+(*NotebookFileOutline
+Notebook[{
+Cell[557, 20, 346, 9, 90, "Input"],
+Cell[906, 31, 119, 3, 39, "Input"],
+Cell[CellGroupData[{
+Cell[1050, 38, 71, 1, 39, "Input"],
+Cell[1124, 41, 67, 1, 39, "Output"]
+}, Open  ]],
+Cell[1206, 45, 65, 1, 39, "Input"],
+Cell[1274, 48, 112, 2, 39, "Input"],
+Cell[CellGroupData[{
+Cell[1411, 54, 54, 1, 39, "Input"],
+Cell[1468, 57, 89, 1, 53, "Print",
+ CellTags->"Info3568626487-1521201"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1594, 63, 133, 2, 65, "Input"],
+Cell[1730, 67, 101, 1, 39, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[1868, 73, 93, 1, 39, "Input"],
+Cell[1964, 76, 31, 0, 39, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2032, 81, 162, 4, 39, "Input"],
+Cell[2197, 87, 87, 2, 39, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2321, 94, 149, 4, 39, "Input"],
+Cell[2473, 100, 89, 2, 39, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[2599, 107, 64, 1, 39, "Input"],
+Cell[2666, 110, 346, 9, 39, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3049, 124, 52, 1, 39, "Input"],
+Cell[3104, 127, 32, 0, 39, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3173, 132, 198, 6, 39, "Input"],
+Cell[3374, 140, 61, 1, 39, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3472, 146, 64, 1, 39, "Input"],
+Cell[3539, 149, 346, 9, 39, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[3922, 163, 111, 2, 39, "Input"],
+Cell[4036, 167, 101, 1, 39, "Output"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4174, 173, 56, 1, 39, "Input"],
+Cell[4233, 176, 433, 10, 55, "Print",
+ CellTags->"Info3568626502-1521201"]
+}, Open  ]],
+Cell[CellGroupData[{
+Cell[4703, 191, 128, 3, 39, "Input"],
+Cell[4834, 196, 115, 1, 39, "Output"]
+}, Open  ]]
+}
+]
+*)
+
+(* End of internal cache information *)
