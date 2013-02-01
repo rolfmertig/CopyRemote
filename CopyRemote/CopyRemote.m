@@ -5,8 +5,9 @@
 (* :Context: CopyRemote` *)
 
 (* :Author:
-        Rolf Mertig
-        rolf@mertig.com
+        Rolf Mertig 
+        GluonVision GmbH
+        http://www.mertig.com
 *)
 
 (* :Package Version: 2.0 *)
