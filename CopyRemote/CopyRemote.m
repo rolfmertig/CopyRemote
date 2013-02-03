@@ -66,9 +66,8 @@ An alternative is to use
 BeginPackage["CopyRemote`",{"JLink`"}];
 
 (* enable updating without reloading. URLQ is memoizing, so leave it unprotected *)
-list = { CopyRemote, OpenRemote, URLFileByteCount(*, URLQ *)};
-Unprotect @@ list;
-ClearAll @@ list;
+Unprotect @@ { CopyRemote, OpenRemote, URLFileByteCount};
+ClearAll @@ { CopyRemote, OpenRemote, URLFileByteCount};
 ClearAll[URLQ];
 
   
@@ -322,7 +321,7 @@ checknetwork[] :=
         Throw[$Failed]
     ];
     
-With[ {list = list},
+With[ {list = { CopyRemote, OpenRemote, URLFileByteCount}},
     SetAttributes[list, ReadProtected];
     Protect @ list;
 ];
