@@ -128,7 +128,7 @@ CopyRemote[url_?URLQ, file_String /; (FileType[file] === None), more___
 (* go from 2 argumetn to three argument form: *)
 CopyRemote[url_?URLQ, file_String /; (
   (DirectoryName[file] =!= "") && (FileType[DirectoryName[file]] === Directory)
-), opts___?OptionQ_
+), opts___?OptionQ
 ] :=
     CopyRemote[url, DirectoryName[file], file, opts];
 
