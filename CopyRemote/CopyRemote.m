@@ -10,18 +10,18 @@
         http://www.mertig.com
 *)
 
-(* :Package Version: 2.0 *)
+(* :Package Version: 3.0 *)
 
-(* :Mathematica Versions: 7 - 9 *)
+(* :Mathematica Versions: 7 - 10 *)
 
 (* :License: LGPL *)
 
-(* :Copyright: Rolf Mertig, 2002 - 2013.  *)
+(* :Copyright: Rolf Mertig, 2002 - 2015.  *)
 
 (* :Installation:
 
-   This package can be invoked without local installation by 
-   Import["http://www.mertig.com/mathdepot/CopyRemote.m"];
+   This package can be invoked without local installation by
+   Import @ "https://raw.githubusercontent.com/rolfmertig/copyremote/master/CopyRemote/CopyRemote.m";
 
 *)
 
@@ -32,7 +32,7 @@
 	Furthermore OpenRemote, URLQ and URLFileByteCount are implemented.
 	
 *)
-	
+
 (* "Example usage:
 
 	CopyRemote["http://functions.wolfram.com/NB/Hypergeometric2F1.nb"]
@@ -45,35 +45,26 @@ To also open the notebook, do:
 
 This copies a palette to the right place:
 
-    NotebookOpen @ CopyRemote["https://dl.dropbox.com/u/38623/SE%20Uploader.nb",
+    NotebookOpen @ CopyRemote["https://www.mertig.com/mathdepot/ButtonTools.nb",
     FileNameJoin[{$UserAddOnsDirectory,"SystemFiles","FrontEnd","Palettes"}]]
      
-Notice: Since with default Options[CopyRemote]  "%20" will be replaced by " ", so this:
-will put "SE Uploader.nb" into the Palettes directory 
- 
- 
-An alternative is to use
-
-	Import["http://www.mertig.com/mathdepot/Installer.m"];
-	InstallPalette["https://dl.dropbox.com/u/38623/SE%20Uploader.nb"]
-
 *)
-      
+
 
 (* :Keywords: projects, install *)
 
 
-BeginPackage["CopyRemote`",{"JLink`"}];
+BeginPackage["CopyRemote`", {"JLink`"}];
 
 (* enable updating without reloading. URLQ is memoizing, so leave it unprotected *)
 Unprotect @@ { CopyRemote, OpenRemote, URLFileByteCount};
 ClearAll @@ { CopyRemote, OpenRemote, URLFileByteCount};
 ClearAll[URLQ];
 
-  
+
 CopyRemote::usage = "CopyRemote[urlfile] copies a urlfile as URLFileNameTake[urlfile] to $TemporaryDirectory.
  CopyRemote[url, localfile] copies a file from an http location to localfile.";
- 
+
 OpenRemote::usage = "OpenRemote[urfile] is a utility function for basically SystemOpen[CopyRemote[urlfile]]."
 
 ProxyHost::usage = "ProxyHost is an option for CopyRemote.";
@@ -91,241 +82,241 @@ Begin["`Private`"];
 
 (* the option StringReplace is to unescape URL-file artifacts like %20 *)
 (* if Print is set to True then a Monitor shows up displaying the percentage of tranfer *)
-Options[CopyRemote] = {ProxyHost :> None, ProxyPort :> None, Print -> True, StringReplace -> {"%20"->" "}};
+Options[CopyRemote] = {ProxyHost :> None, ProxyPort :> None, Print -> True, StringReplace -> {"%20" -> " "}};
 Options[OpenRemote] = Options[CopyRemote];
 
 (* CopyRemote might return $Failed, therefore, only open the result if it was successful : *)
 OpenRemote[args__] :=
     Module[ {cr},
-        Replace[cr = CopyRemote[args], (s_String?FileExistsQ) :> SystemOpen[s]];
-        cr
+      Replace[cr = CopyRemote[args], (s_String?FileExistsQ) :> SystemOpen[s]];
+      cr
     ];
 
 
 URLFileNameTake[s_String] :=
-    StringSplit[FileNameTake[s],"&"]//First;
-filename = Function[{f,s}, StringReplace[ URLFileNameTake[f], s]];
+    StringSplit[FileNameTake[s], "&"] // First;
+filename = Function[{f, s}, StringReplace[ URLFileNameTake[f], s]];
 
 (* use $TemporaryDirectory if no second argument is given *)
-CopyRemote[url_?URLQ, opts:OptionsPattern[]] :=
+CopyRemote[url_?URLQ, opts : OptionsPattern[]] :=
     CopyRemote[url, $TemporaryDirectory, FileNameJoin[{$TemporaryDirectory, filename[url, OptionValue[StringReplace]]}], opts];
 
 (* create directory if it does not exist *)
-CopyRemote[url_?URLQ, file_String /;(
-             (DirectoryName[file]=!="") && (FileType[DirectoryName[file]] =!= Directory)
-           ), opts___?OptionQ_
-          ] :=
+CopyRemote[url_?URLQ, file_String /; (
+  (DirectoryName[file] =!= "") && (FileType[DirectoryName[file]] =!= Directory)
+), opts___?OptionQ_
+] :=
     Module[ {cdir},
-        Catch[
+      Catch[
         cdir = CreateDirectory[DirectoryName @ file];
-        If[ cdir  === $Failed,
-            Throw[$Failed]
+        If[ cdir === $Failed,
+          Throw[$Failed]
         ];
-        CopyRemote[url, cdir, FileNameTake[file], opts] 
-        ]
+        CopyRemote[url, cdir, FileNameTake[file], opts]
+      ]
     ];
-     
+
 (* since it will put files in Directory[] otherwise, redefine natural calls like
    CopyRemote["http://www.mertig.com/mathdepot/CopyRemote.m", "CopyRemote.m"] to mean
    CopyRemote["http://www.mertig.com/mathdepot/CopyRemote.m", FileNameJoin[{$TemporaryDirectory, "CopyRemote.m"}]]
 *)
-   
+
 CopyRemote[url_?URLQ, file_String /; (FileType[file] === None), more___
-          ]  /; (file === FileNameTake[file]) :=
+] /; (file === FileNameTake[file]) :=
     CopyRemote[url, $TemporaryDirectory, file];
- 
- (* go from 2 argumetn to three argument form: *)
-CopyRemote[url_?URLQ, file_String /;(
-             (DirectoryName[file]=!="") && (FileType[DirectoryName[file]] === Directory)
-           ), opts___?OptionQ_
-          ] :=
+
+(* go from 2 argumetn to three argument form: *)
+CopyRemote[url_?URLQ, file_String /; (
+  (DirectoryName[file] =!= "") && (FileType[DirectoryName[file]] === Directory)
+), opts___?OptionQ_
+] :=
     CopyRemote[url, DirectoryName[file], file, opts];
 
 (* if the directory exists, use it and get the filename from the url filename *)
-CopyRemote[url_?URLQ, 
-           dir_String /; FileType[dir] === Directory, 
-           opts:OptionsPattern[]
+CopyRemote[url_?URLQ,
+  dir_String /; FileType[dir] === Directory,
+  opts : OptionsPattern[]
 ] :=
     CopyRemote[url, dir, filename[url, OptionValue[StringReplace] ], opts];
-        
+
 (*  a NotebookClose function which does nothing if $Notebooks is False *)
 closenb = Function[locnb, If[ $Notebooks && StringMatchQ[locnb, "*.nb", IgnoreCase -> True],
-                              Select[Notebooks[], 
-                              ToFileName[ "FileName" /. NotebookInformation[#]] === locnb &] /. {n_NotebookObject} :> NotebookClose[n]
-                          ]];
-        
-CopyRemote[url_?URLQ, 
-           localdir_String?DirectoryQ, 
-           locfile_String, 
-           opts:OptionsPattern[]
-           ] :=
+  Select[Notebooks[],
+    ToFileName[ "FileName" /. NotebookInformation[#]] === locnb &] /. {n_NotebookObject} :> NotebookClose[n]
+]];
+
+CopyRemote[url_?URLQ,
+  localdir_String?DirectoryQ,
+  locfile_String,
+  opts : OptionsPattern[]
+] :=
     Catch @ Block[ {openStream, read, close, locfilefull, locfiletmp, outFile, rfilesize},
-                Needs["JLink`"];
-                Symbol["JLink`InstallJava"][]; (* using Symbol here enables an .mx saveable package, or to put this into a ButtonFunction, etc.  *)
-                locfilefull = If[ DirectoryName[locfile]==="",
-                                  FileNameJoin[{localdir, locfile}],
-                                  locfile
-                              ];
-                (* download to a temporary file , in case the download fails.
+      Needs["JLink`"];
+      Symbol["JLink`InstallJava"][]; (* using Symbol here enables an .mx saveable package, or to put this into a ButtonFunction, etc.  *)
+      locfilefull = If[ DirectoryName[locfile] === "",
+        FileNameJoin[{localdir, locfile}],
+        locfile
+      ];
+      (* download to a temporary file , in case the download fails.
                    copy locfiletmp to locfilefull only if download succeeded *)
-                (* This code is based on the GetRemote example in the JLink documentation *)
-                rfilesize = URLFileByteCount[url];
-                If[ !IntegerQ[rfilesize],
-                    Message[CopyRemote::failed, url];
-                    Throw[$Failed]
+      (* This code is based on the GetRemote example in the JLink documentation *)
+      rfilesize = URLFileByteCount[url];
+      If[ !IntegerQ[rfilesize],
+        Message[CopyRemote::failed, url];
+        Throw[$Failed]
+      ];
+      (* temporary file *)
+      outFile = OpenWrite[DOSTextFormat -> False];
+      locfiletmp =
+          Function[j, If[ OptionValue[Print],
+            Monitor[j, progress[url, outFile[[1]], rfilesize]],
+            j
+          ],
+            HoldFirst
+          ][
+            Symbol["JLink`JavaBlock"][
+              Module[ {u, stream, numRead, buf, prxyHost, prxyPort},
+                {prxyHost, prxyPort} = OptionValue /@ {ProxyHost, ProxyPort};
+                If[ StringQ[prxyHost],
+                (* Set properties to force use of proxy. *)
+                  Symbol["JLink`SetInternetProxy"][prxyHost, prxyPort]
                 ];
-                (* temporary file *)
-                outFile = OpenWrite[DOSTextFormat -> False];
-                locfiletmp = 
-                     Function[j, If[ OptionValue[Print],
-                                     Monitor[j, progress[url, outFile[[1]], rfilesize]],
-                                     j
-                                 ], 
-                              HoldFirst
-                             ][
-                Symbol["JLink`JavaBlock"][
-                    Module[ {u, stream, numRead, buf, prxyHost, prxyPort},
-                        {prxyHost, prxyPort} = OptionValue/@{ProxyHost, ProxyPort};
-                        If[ StringQ[prxyHost],
-                            (* Set properties to force use of proxy. *)
-                            Symbol["JLink`SetInternetProxy"][prxyHost, prxyPort]
-                        ];
-                        u = Symbol["JLink`JavaNew"]["java.net.URL", url];
-                        stream = u@openStream[];
-                        If[ stream === $Failed,
-                            Return[$Failed]
-                        ];
-                        buf = Symbol["JLink`JavaNew"]["[B", 8192]; (* ] *)
-                        While[(numRead = stream@read[buf]) > 0,
-                         WriteString[outFile, FromCharacterCode[If[ # < 0,
-                                                                    #+256,
-                                                                    #
-                                                                ]& /@ Take[Symbol["JLink`Val"][buf], numRead]]]
-                        ];
-                        stream@close[];
-                        Close[outFile]
-                    (* Close returns the filename *)
-                    ]
-                ]
-                         ];
-                (*check if the transfer was successfull: *)
-                (* TODO: add MD5sum check here somehow *)
-            (* sometimes rfilesize is -1 ... : *)
-                If[ rfilesize > 0,
-                    If[ FileByteCount[locfiletmp] =!= rfilesize,
-                        Message[CopyRemote::failed, url];
-                        Throw[$Failed]
-                    ]
+                u = Symbol["JLink`JavaNew"]["java.net.URL", url];
+                stream = u@openStream[];
+                If[ stream === $Failed,
+                  Return[$Failed]
                 ];
-                    (* locfilefull can be a notebook. If it is open, close it *)
-                closenb @ locfilefull;
-                If[ FileExistsQ[locfilefull],
-                    DeleteFile[locfilefull]
+                buf = Symbol["JLink`JavaNew"]["[B", 8192]; (* ] *)
+                While[(numRead = stream@read[buf]) > 0,
+                  WriteString[outFile, FromCharacterCode[If[ # < 0,
+                    # + 256,
+                    #
+                  ]& /@ Take[Symbol["JLink`Val"][buf], numRead]]]
                 ];
-                RenameFile[locfiletmp, locfilefull]
-            ];
+                stream@close[];
+                Close[outFile]
+              (* Close returns the filename *)
+              ]
+            ]
+          ];
+      (*check if the transfer was successfull: *)
+      (* TODO: add MD5sum check here somehow *)
+      (* sometimes rfilesize is -1 ... : *)
+      If[ rfilesize > 0,
+        If[ FileByteCount[locfiletmp] =!= rfilesize,
+          Message[CopyRemote::failed, url];
+          Throw[$Failed]
+        ]
+      ];
+      (* locfilefull can be a notebook. If it is open, close it *)
+      closenb @ locfilefull;
+      If[ FileExistsQ[locfilefull],
+        DeleteFile[locfilefull]
+      ];
+      RenameFile[locfiletmp, locfilefull]
+    ];
 
 
 (* does the URL exists or not *)
 URLQ[link_String] :=
-    URLQ[link] =  (* memoize links, to save time *)
-    Catch @ Block[ {openConnection, getContentLength, getInputstream, check, 
-    close, getInputStream},
-                If[ (!StringMatchQ[StringTrim@link, "http://*"] ) && 
-                      (!StringMatchQ[StringTrim@link, "https://*"] ),
-                    Throw[False]
-                ];
-                checknetwork[]; (* maybe not necessary, but well ... *)
-                Needs["JLink`"];
-                Symbol["JLink`InstallJava"][];
-                Symbol["JLink`JavaBlock"][
-                 Module[ {url, urlcon},
-                     url = Symbol["JavaNew"]["java.net.URL", StringTrim@link];
-                     urlcon = url@openConnection[];
-                     Quiet[check = urlcon@getInputStream[]];
-                     If[ check === $Failed,
-                         False,
-                         check@close[];
-                         True
-                     ]
-                 ]]
-            ];
-URLQ[h_/;Head[h] =!= String] = False;   
+    URLQ[link] = (* memoize links, to save time *)
+        Catch @ Block[ {openConnection, getContentLength, getInputstream, check,
+          close, getInputStream},
+          If[ (!StringMatchQ[StringTrim@link, "http://*"] ) &&
+              (!StringMatchQ[StringTrim@link, "https://*"] ),
+            Throw[False]
+          ];
+          checknetwork[]; (* maybe not necessary, but well ... *)
+          Needs["JLink`"];
+          Symbol["JLink`InstallJava"][];
+          Symbol["JLink`JavaBlock"][
+            Module[ {url, urlcon},
+              url = Symbol["JavaNew"]["java.net.URL", StringTrim@link];
+              urlcon = url@openConnection[];
+              Quiet[check = urlcon@getInputStream[]];
+              If[ check === $Failed,
+                False,
+                check@close[];
+                True
+              ]
+            ]]
+        ];
+URLQ[h_ /; Head[h] =!= String] = False;
 
 
 (* find out how big the remote file is *)
 URLFileByteCount[link_?URLQ] :=
-    Block[ {openConnection, getContentLength, getInputstream, check, 
+    Block[ {openConnection, getContentLength, getInputstream, check,
       close, getInputStream},
-        Needs["JLink`"];
-        Symbol["JLink`InstallJava"][];
-        Symbol["JLink`JavaBlock"][
-         Module[ {url, urlcon, len},
-             url = Symbol["JavaNew"]["java.net.URL", link];
-             urlcon = url@openConnection[];
-             Quiet[check = urlcon@getInputStream[]];
-             If[ check === $Failed,
-                 $Failed,
-                 len = urlcon@getContentLength[];
-                 check@close[];
-                 len
-             ]
-         ]]
+      Needs["JLink`"];
+      Symbol["JLink`InstallJava"][];
+      Symbol["JLink`JavaBlock"][
+        Module[ {url, urlcon, len},
+          url = Symbol["JavaNew"]["java.net.URL", link];
+          urlcon = url@openConnection[];
+          Quiet[check = urlcon@getInputStream[]];
+          If[ check === $Failed,
+            $Failed,
+            len = urlcon@getContentLength[];
+            check@close[];
+            len
+          ]
+        ]]
     ];
-    
-    
-   
+
+
+
 $progressupdateinterval = .6;
 myroundMB[rfs_?NumberQ] :=
-    Round[100 rfs /1024.^2]/ 100.;
+    Round[100 rfs / 1024.^2] / 100.;
 myroundMB[_] :=
     " ";
 
 Clear[progress];
 progress[remotefile_?URLQ, localfile_String, rfilesize_Integer] :=
     If[ $Notebooks,
-        Row[{"Copied ", 
+      Row[{"Copied ",
         ProgressIndicator[
-         Quiet[If[ ! NumberQ[#],
-                   0,
-                   #
-               ] &@(Refresh[FileByteCount[localfile], 
-                TrackedSymbols -> {},
-             UpdateInterval -> $progressupdateinterval]/rfilesize)],
-             Background-> Orange, ImageSize->{42, 15}
-         ],
+          Quiet[If[ ! NumberQ[#],
+            0,
+            #
+          ] &@(Refresh[FileByteCount[localfile],
+            TrackedSymbols -> {},
+            UpdateInterval -> $progressupdateinterval] / rfilesize)],
+          Background -> Orange, ImageSize -> {42, 15}
+        ],
         " ", If[ ! NumberQ[Setting@#],
-                 0,
-                 #
-             ] &@
-         Refresh[Round[100 FileByteCount[localfile]/rfilesize], 
-                 TrackedSymbols -> {},
-                  UpdateInterval -> $progressupdateinterval
-         ], 
-        " % of ", 
+          0,
+          #
+        ] &@
+            Refresh[Round[100 FileByteCount[localfile] / rfilesize],
+              TrackedSymbols -> {},
+              UpdateInterval -> $progressupdateinterval
+            ],
+        " % of ",
         myroundMB[rfilesize],
-        " MB ", 
+        " MB ",
         "from ",
         remotefile,
         " to ", localfile
-        }],
-        Print["Transferring ", remotefile,"   please wait "]
+      }],
+      Print["Transferring ", remotefile, "   please wait "]
     ];
-    
+
 (* check for a setting in the Mathematica preferences *)
 checknetwork[] :=
     If[ ("AllowInternetUse" /. SystemInformation["Network"]) === False,
-        Print["You have configured Mathematica to not access the internet. Too bad. 
+      Print["You have configured Mathematica to not access the internet. Too bad.
 	Please check the \"Allow Mathematica to use the Internet\" box in the
     Help \[FilledRightTriangle] Internet Connectivity dialog. " ];
-        Throw[$Failed]
+      Throw[$Failed]
     ];
-    
+
 With[ {list = { CopyRemote, OpenRemote, URLFileByteCount}},
-    SetAttributes[list, ReadProtected];
-    Protect @ list;
+  SetAttributes[list, ReadProtected];
+  Protect @ list;
 ];
-    
+
 End[];
 EndPackage[];
 (*
