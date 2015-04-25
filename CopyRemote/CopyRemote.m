@@ -63,16 +63,16 @@ ClearAll[URLQ];
 
 
 CopyRemote::usage = "CopyRemote[urlfile] copies a urlfile as URLFileNameTake[urlfile] to $TemporaryDirectory.
- CopyRemote[url, localfile] copies a file from an http location to localfile.";
+ CopyRemote[url, localfile] copies a file from an url to localfile.";
 
 OpenRemote::usage = "OpenRemote[urfile] is a utility function for basically SystemOpen[CopyRemote[urlfile]]."
 
 ProxyHost::usage = "ProxyHost is an option for CopyRemote.";
 ProxyPort::usage = "ProxyPort is an option for CopyRemote.";
 
-URLFileByteCount::usage = "URLFileByteCount[file] gives the remote file size in Byte."
+URLFileByteCount::usage = "URLFileByteCount[file] gives the remote file size in bytes."
 
-URLFileNameTake::usage = "URLFileNameTake[file] is like FileNameTake but skpips everything after a ?";
+URLFileNameTake::usage = "URLFileNameTake[file] is like FileNameTake but skips everything after a ?";
 
 URLQ::usage = "URLQ[url] give True if url is reachable and False otherwise.";
 
