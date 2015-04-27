@@ -168,7 +168,7 @@ CopyRemote[url_?URLQ,
       (* temporary file *)
       outFile = OpenWrite[DOSTextFormat -> False];
       locfiletmp =
-          Function[j, If[ OptionValue[Print],
+          Function[j, If[ MemberQ[{Print, True, PrintTemporary}, OptionValue[Print]],
             Monitor[j, progress[url, outFile[[1]], rfilesize]],
             j
           ],
