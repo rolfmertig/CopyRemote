@@ -56,11 +56,12 @@ This copies a palette to the right place:
 
 BeginPackage["CopyRemote`", {"JLink`"}];
 
-(* enable updating without reloading. URLQ is memoizing, so leave it unprotected *)
-Unprotect @@ { CopyRemote, OpenRemote, URLFileByteCount};
-ClearAll @@ { CopyRemote, OpenRemote, URLFileByteCount};
-ClearAll[URLQ];
 
+(* enable updating without reloading. URLQ is memoizing, so leave it unprotected *)
+Unprotect @@ Names["CopyRemote`*"];
+ClearAll["CopyRemote`*"];
+
+$CopyRemoteVersion = 2.0;
 
 CopyRemote::usage = "CopyRemote[urlfile] copies a urlfile as URLFileNameTake[urlfile] to $TemporaryDirectory.
  CopyRemote[url, localfile] copies a file from an url to localfile.";
@@ -78,7 +79,9 @@ URLQ::usage = "URLQ[url] give True if url is reachable and False otherwise.";
 
 CopyRemote::failed = "The transfer of `1` did not succeed. Please try again.";
 
+
 Begin["`Private`"];
+
 
 (* the option StringReplace is to unescape URL-file artifacts like %20 *)
 (* if Print is set to True then a Monitor shows up displaying the percentage of tranfer *)
@@ -99,7 +102,11 @@ filename = Function[{f, s}, StringReplace[ URLFileNameTake[f], s]];
 
 (* use $TemporaryDirectory if no second argument is given *)
 CopyRemote[url_?URLQ, opts : OptionsPattern[]] :=
-    CopyRemote[url, $TemporaryDirectory, FileNameJoin[{$TemporaryDirectory, filename[url, OptionValue[StringReplace]]}], opts];
+    CopyRemote[url, {$TemporaryDirectory, 
+    	             FileNameJoin[{$TemporaryDirectory, filename[url, OptionValue[StringReplace]]}
+    	             ]
+                    }, opts
+    ];
 
 (* create directory if it does not exist *)
 CopyRemote[url_?URLQ, file_String /; (
@@ -112,7 +119,7 @@ CopyRemote[url_?URLQ, file_String /; (
         If[ cdir === $Failed,
           Throw[$Failed]
         ];
-        CopyRemote[url, cdir, FileNameTake[file], opts]
+        CopyRemote[url, {cdir, FileNameTake[file]}, opts]
       ]
     ];
 
@@ -123,7 +130,7 @@ CopyRemote[url_?URLQ, file_String /; (
 
 CopyRemote[url_?URLQ, file_String /; (FileType[file] === None), more___
 ] /; (file === FileNameTake[file]) :=
-    CopyRemote[url, $TemporaryDirectory, file];
+    CopyRemote[url, {$TemporaryDirectory, file}];
 
 (*
 (* go from 2 string argument to one string and one list argument form: *)
