@@ -125,19 +125,21 @@ CopyRemote[url_?URLQ, file_String /; (FileType[file] === None), more___
 ] /; (file === FileNameTake[file]) :=
     CopyRemote[url, $TemporaryDirectory, file];
 
-(* go from 2 argumetn to three argument form: *)
+(*
+(* go from 2 string argument to one string and one list argument form: *)
 CopyRemote[url_?URLQ, file_String /; (
   (DirectoryName[file] =!= "") && (FileType[DirectoryName[file]] === Directory)
 ), opts___?OptionQ
 ] :=
     CopyRemote[url, DirectoryName[file], file, opts];
+    *)
+    
 
 (* if the directory exists, use it and get the filename from the url filename *)
 CopyRemote[url_?URLQ,
   dir_String /; FileType[dir] === Directory,
   opts : OptionsPattern[]
-] :=
-    CopyRemote[url, dir, filename[url, OptionValue[StringReplace] ], opts];
+] :=  CopyRemote[url, {dir, filename[url, OptionValue[StringReplace] ]}, opts];
 
 (*  a NotebookClose function which does nothing if $Notebooks is False *)
 closenb = Function[locnb, If[ $Notebooks && StringMatchQ[locnb, "*.nb", IgnoreCase -> True],
@@ -146,8 +148,10 @@ closenb = Function[locnb, If[ $Notebooks && StringMatchQ[locnb, "*.nb", IgnoreCa
 ]];
 
 CopyRemote[url_?URLQ,
-  localdir_String?DirectoryQ,
-  locfile_String,
+	{
+	  localdir_String?DirectoryQ,
+	  locfile_String /; FileType[locfile] =!= Directory (* so locfile can exist or not, but should not be a Directory *)
+	},
   opts : OptionsPattern[]
 ] :=
     Catch @ Block[ {openStream, read, close, locfilefull, locfiletmp, outFile, rfilesize},
@@ -272,7 +276,6 @@ myroundMB[rfs_?NumberQ] :=
 myroundMB[_] :=
     " ";
 
-Clear[progress];
 progress[remotefile_?URLQ, localfile_String, rfilesize_Integer] :=
     If[ $Notebooks,
       Row[{"Copied ",
