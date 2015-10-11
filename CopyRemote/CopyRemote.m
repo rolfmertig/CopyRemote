@@ -111,8 +111,7 @@ CopyRemote[url_?URLQ, opts : OptionsPattern[]] :=
 (* create directory if it does not exist *)
 CopyRemote[url_?URLQ, file_String /; (
   (DirectoryName[file] =!= "") && (FileType[DirectoryName[file]] =!= Directory)
-), opts___?OptionQ_
-] :=
+), opts___?OptionQ_ ] :=
     Module[ {cdir},
       Catch[
         cdir = CreateDirectory[DirectoryName @ file];
@@ -161,6 +160,9 @@ CopyRemote[url_?URLQ,
 	},
   opts : OptionsPattern[]
 ] :=
+	If[$CloudEvaluation === True,
+		URLSave[url, FileNameJoin[{localdir, locfile}]]
+		,
     Catch @ Block[ {openStream, read, close, locfilefull, locfiletmp, outFile, rfilesize},
       Needs["JLink`"];
       Symbol["JLink`InstallJava"][]; (* using Symbol here enables an .mx saveable package, or to put this into a ButtonFunction, etc.  *)
@@ -225,12 +227,13 @@ CopyRemote[url_?URLQ,
         DeleteFile[locfilefull]
       ];
       RenameFile[locfiletmp, locfilefull]
-    ];
+    ]];
 
 
 (* does the URL exists or not *)
 URLQ[link_String] :=
     URLQ[link] = (* memoize links, to save time *)
+        Quiet @ (* in the cloud there is an error message but it still works ... *)
         Catch @ Block[ {openConnection, getContentLength, getInputstream, check,
           close, getInputStream},
           If[ (!StringMatchQ[StringTrim@link, "http://*"] ) &&
